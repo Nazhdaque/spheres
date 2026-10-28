@@ -1,0 +1,173 @@
+.spheres {
+	--min-screen-size: 2.33;
+	--max-screen-size: 12.52;
+	--size-range: calc(var(--max-screen-size) - var(--min-screen-size));
+
+	display: flex;
+	align-items: flex-end;
+	font-weight: 600;
+	flex-direction: row;
+	transform: scaleX(calc(1 - var(--is-reverse, 0) * 2));
+}
+
+.spheres > :first-child {
+	margin-inline-start: 0;
+}
+
+.spheres > * {
+	--dir-multiplier: calc(1 - var(--is-reverse, 0) * 2);
+	--linear-proportion: calc(
+		(var(--value) - var(--min)) / (var(--max) - var(--min))
+	);
+	--log-proportion: calc(
+		(log(var(--value)) - log(var(--min))) / (log(var(--max)) - log(var(--min)))
+	);
+	--current-proportion: var(--linear-proportion);
+}
+
+.spheres[style*="--log-scale: 1"] > * {
+	--current-proportion: var(--log-proportion);
+}
+
+.spheres > * {
+	--size: calc(
+		var(--min-screen-size) + (var(--current-proportion) * var(--size-range))
+	);
+	--calculated-opacity: calc(0.1 + (var(--size) * 0.02));
+	--shadow-opacity-final: var(--shadow-opacity, var(--calculated-opacity));
+	--c-light-calculated: color-mix(in oklch, var(--c-main), #fff 40%);
+	--c-dark-calculated: color-mix(in oklch, var(--c-main), #000 75%);
+	--inner-shadows:
+		inset calc(var(--size) * -0.05rem) calc(var(--size) * 0.05rem)
+			calc(var(--size) * 0.1rem) oklch(1 0 0 / 0.2),
+		inset calc(var(--size) * 0.1rem) calc(var(--size) * -0.1rem)
+			calc(var(--size) * 0.25rem)
+			oklch(0 0 0 / calc(var(--shadow-opacity-final) * 1.2));
+	--drop-shadow:
+		calc(var(--size) * 0.08rem * var(--dir-multiplier))
+			calc(var(--size) * 0.08rem) calc(var(--size) * 0.15rem)
+			rgba(0, 0, 0, 0.25),
+		calc(var(--size) * 0.15rem * var(--dir-multiplier))
+			calc(var(--size) * 0.2rem) calc(var(--size) * 0.35rem) rgba(0, 0, 0, 0.15);
+	--scale-factor: calc(var(--max-screen-size) / var(--size));
+	--jump-height: -2.5rem;
+
+	position: relative;
+	z-index: calc(
+		(1 - var(--layer-order, 0)) * sibling-index() + var(--layer-order, 0) *
+			(sibling-count() - sibling-index() + 1)
+	);
+	margin-inline-start: var(
+		--offset,
+		calc(var(--size) * -1rem * var(--overlap-ratio, 0.22))
+	);
+	width: calc(var(--size) * 1rem);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-left: calc(var(--size) * 0.016rem);
+	padding-top: calc(var(--size) * 0.008rem);
+	font-size: clamp(0.45rem, calc(var(--size) * 0.16rem), 6rem);
+	text-shadow: 0 calc(var(--size) * 0.02rem) calc(var(--size) * 0.04rem)
+		oklch(0 0 0 / 0.85);
+	background: radial-gradient(
+		circle at 68% 28%,
+		oklch(0.98 0.01 0) 0%,
+		var(--c-light-calculated) 12%,
+		var(--c-main) 45%,
+		var(--c-dark-calculated) 80%,
+		var(--c-light-calculated) 100%
+	);
+	box-shadow: var(--drop-shadow), var(--inner-shadows);
+	transform-origin: bottom center;
+	will-change: translate, scale;
+	cursor: pointer;
+	scale: calc(1 - var(--is-reverse, 0) * 2) 1;
+	transition:
+		translate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+		scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@property --core-darkness {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0.92;
+}
+
+.spheres > *:hover,
+.spheres > *.legend-active,
+.spheres > *.is-pinned {
+	--core-darkness: 0.45;
+
+	translate: 0 var(--jump-height) 0;
+	scale: calc((1 - var(--is-reverse, 0) * 2) * var(--scale-factor))
+		var(--scale-factor);
+}
+
+.spheres > *.is-pinned:hover {
+	z-index: 999;
+}
+
+.spheres > *::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 0;
+	background: transparent;
+	clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.spheres > *:hover::before,
+.spheres > *.legend-active::before,
+.spheres > *.is-pinned::before {
+	height: calc(2.5rem / var(--scale-factor) + 10px);
+	bottom: calc(-2.5rem / var(--scale-factor));
+	clip-path: polygon(0% 0%, 100% 0%, 55% 100%, 45% 100%);
+}
+
+.spheres > *::after {
+	content: "";
+	position: absolute;
+	bottom: calc(var(--size) * -0.05rem);
+	left: 7%;
+	width: 86%;
+	height: calc(var(--size) * 0.12rem);
+	filter: blur(calc(var(--size) * 0.045rem));
+	pointer-events: none;
+	will-change: filter, transform, --core-darkness;
+	transform-origin: top center;
+	transform: translate3d(
+			calc(var(--size) * 0.08rem * var(--dir-multiplier)),
+			calc(var(--size) * 0.04rem),
+			0
+		)
+		scale(1);
+	background: radial-gradient(
+		oklch(0 0 0 / var(--core-darkness)) 0%,
+		oklch(0 0 0 / calc(var(--core-darkness) * 0.85)) 25%,
+		oklch(0 0 0 / calc(var(--core-darkness) * 0.45)) 50%,
+		oklch(0 0 0 / 0) 75%
+	);
+	border-radius: 50%;
+	z-index: -1;
+	transition:
+		transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+		filter 0.5s ease,
+		--core-darkness 0.5s ease;
+}
+
+.spheres > *:hover::after,
+.spheres > *.legend-active::after,
+.spheres > *.is-pinned::after {
+	filter: blur(calc(var(--size) * 0.065rem));
+	transform: translate3d(
+			calc(var(--size) * 0.08rem * var(--dir-multiplier)),
+			calc((2.5rem / var(--scale-factor)) + (var(--size) * 0.04rem)),
+			0
+		)
+		scale(calc(1.12 / var(--scale-factor)));
+}

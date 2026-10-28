@@ -1,0 +1,30 @@
+:root {
+	--red-500: oklch(0.63 0.25 25);
+	--warm-500: oklch(0.6842 0.1729 12.86);
+	--orange-500: oklch(0.7077 0.2081 48.24);
+	--amber-500: oklch(0.765 0.195 72);
+	--yellow-500: oklch(0.8354 0.1742 96.74);
+	--lime-500: oklch(0.7925 0.2227 114.73);
+	--green-500: oklch(0.695 0.215 142.5);
+	--teal-500: oklch(0.69 0.165 185);
+	--cyan-500: oklch(0.7404 0.1558 235.93);
+	--blue-500: oklch(0.62 0.23 255);
+	--indigo-500: oklch(0.612 0.221 278.5);
+	--violet-500: oklch(0.6471 0.2592 310.66);
+	--pink-500: oklch(0.6557 0.2524 353.64);
+
+	--bg-color: #1e1f26;
+	--glow-color: var(--violet-500);
+	--glow-intensity: 0.66;
+	--dimmed-glow-center: color-mix(
+		in oklch,
+		var(--glow-color),
+		#000 calc(100% - (var(--glow-intensity) * 75%))
+	);
+	--dimmed-glow-edge: color-mix(
+		in oklch,
+		var(--glow-color),
+		#000 calc(100% - (var(--glow-intensity) * 24%))
+	);
+	--calculated-radius: calc(40% + (var(--glow-intensity) * 40%));
+}

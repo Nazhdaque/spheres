@@ -1,0 +1,52 @@
+@font-face {
+	font-family: "Geologica";
+	font-display: swap;
+	font-weight: 100 900;
+	src: url(../assets/Geologica.ttf) format(truetype);
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+::selection {
+	background-color: oklch(from var(--pink-500) l c h / 0.66);
+}
+
+body {
+	position: relative;
+	min-height: 100dvh;
+	padding: 2em;
+	display: grid;
+	place-items: center;
+	font-family: Geologica;
+	color: white;
+	font-weight: 100;
+	background:
+		radial-gradient(
+			circle at center,
+			var(--dimmed-glow-center) 0%,
+			var(--dimmed-glow-edge) var(--calculated-radius),
+			oklch(0 0 0 / 0.95) 100%
+		),
+		var(--bg-color);
+}
+
+ul {
+	list-style: none;
+}
+
+bi-spheres,
+bi-legend {
+	display: contents;
+}
+
+.logo {
+	position: absolute;
+	place-self: var(--place, start);
+	max-width: 10em;
+	margin: 2em;
+	object-fit: contain;
+}
