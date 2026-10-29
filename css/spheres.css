@@ -2,6 +2,7 @@
 	--min-screen-size: 2.33;
 	--max-screen-size: 12.52;
 	--size-range: calc(var(--max-screen-size) - var(--min-screen-size));
+	--rad: 2em;
 
 	display: flex;
 	align-items: flex-end;
@@ -170,4 +171,19 @@
 			0
 		)
 		scale(calc(1.12 / var(--scale-factor)));
+}
+
+.spheres:focus-visible,
+.spheres > *:focus-visible {
+	outline: none;
+}
+
+.spheres:focus-visible {
+	outline: none;
+}
+
+.spheres:focus-visible > * {
+	outline: calc(1.5px + var(--size) * 0.015rem) solid
+		var(--c-light-calculated, var(--c-main));
+	outline-offset: calc(2px + var(--size) * 0.025rem);
 }

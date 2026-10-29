@@ -1,55 +1,98 @@
 import "./loader.js";
-import { calculateScale, buildElementMap } from "./core.js";
+import { ScaleManager } from "./core.js";
+import { initAccessibility } from "./nav.js";
 
-async function initApp() {
-	const isSpheresExist = !!document.querySelector(".spheres");
-	const isLegendExist = !!document.querySelector(".legend li");
-
-	if (!isSpheresExist || !isLegendExist) {
-		await Promise.all([
-			new Promise(resolve =>
-				document.addEventListener("spheres-ready", resolve, { once: true }),
-			),
-			new Promise(resolve =>
-				document.addEventListener("legend-ready", resolve, { once: true }),
-			),
-		]);
-	}
-
-	const container = document.querySelector(".spheres");
-	const legendItems = document.querySelectorAll(".legend li");
-
-	if (!container || !legendItems.length) return;
-
-	const spheres = calculateScale(container);
-	const { getPair } = buildElementMap(spheres, legendItems);
-
-	const events = {
-		mouseover: pair => toggleActive(pair, true),
-		mouseout: pair => toggleActive(pair, false),
-		click: pair => togglePinned(pair),
+class App {
+	static CONFIG = {
+		selectors: {
+			spheres: ".spheres",
+			legendItems: ".legend li",
+			legendContainer: ".legend",
+		},
+		events: {
+			readySpheres: "spheres-ready",
+			readyLegend: "legend-ready",
+		},
+		classes: {
+			pinned: "is-pinned",
+			activeSphere: "legend-active",
+			activeLegend: "sphere-active",
+		},
 	};
 
-	function toggleActive(pair, isOver) {
-		pair.sphere?.classList.toggle("legend-active", isOver);
-		pair.legend?.classList.toggle("sphere-active", isOver);
+	constructor() {
+		this.container = null;
+		this.legendItems = null;
+		this.scaleManager = null;
+		this.events = {
+			mouseover: pair => this.toggleActive(pair, true),
+			mouseout: pair => this.toggleActive(pair, false),
+			click: pair => this.togglePinned(pair),
+		};
 	}
 
-	function togglePinned(pair) {
-		pair.sphere?.classList.toggle("is-pinned");
-		pair.legend?.classList.toggle("is-pinned");
-	}
+	async init() {
+		const selectors = App.CONFIG.selectors;
+		const readyEvents = App.CONFIG.events;
 
-	Object.entries(events).forEach(([eventType, handler]) => {
-		document.addEventListener(eventType, e => {
-			const pair = getPair(e.target);
-			if (pair) handler(pair);
+		const isSpheresExist = !!document.querySelector(selectors.spheres);
+		const isLegendExist = !!document.querySelector(selectors.legendItems);
+
+		if (!isSpheresExist || !isLegendExist) {
+			await Promise.all([
+				new Promise(resolve =>
+					document.addEventListener(readyEvents.readySpheres, resolve, {
+						once: true,
+					}),
+				),
+				new Promise(resolve =>
+					document.addEventListener(readyEvents.readyLegend, resolve, {
+						once: true,
+					}),
+				),
+			]);
+		}
+
+		this.container = document.querySelector(selectors.spheres);
+		this.legendItems = document.querySelectorAll(selectors.legendItems);
+
+		if (!this.container || !this.legendItems.length) return;
+
+		this.scaleManager = new ScaleManager(this.container, this.legendItems);
+		this.bindEvents();
+
+		initAccessibility({
+			spheres: selectors.spheres,
+			legend: selectors.legendContainer,
 		});
-	});
+	}
+
+	toggleActive(pair, isOver) {
+		const classes = App.CONFIG.classes;
+		pair.sphere?.classList.toggle(classes.activeSphere, isOver);
+		pair.legend?.classList.toggle(classes.activeLegend, isOver);
+	}
+
+	togglePinned(pair) {
+		const classes = App.CONFIG.classes;
+		pair.sphere?.classList.toggle(classes.pinned);
+		pair.legend?.classList.toggle(classes.pinned);
+	}
+
+	bindEvents() {
+		Object.entries(this.events).forEach(([eventType, handler]) => {
+			document.addEventListener(eventType, e => {
+				const pair = this.scaleManager.getPair(e.target);
+				if (pair) handler(pair);
+			});
+		});
+	}
 }
 
+const app = new App();
+
 if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", initApp);
+	document.addEventListener("DOMContentLoaded", () => app.init());
 } else {
-	initApp();
+	app.init();
 }
