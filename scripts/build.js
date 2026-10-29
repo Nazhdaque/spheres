@@ -10,6 +10,7 @@ class HtmlBundler {
 			font: "assets/Geologica.ttf",
 			logo: "assets/logo.svg",
 			loaderJs: "js/loader.js",
+			lumenJs: "js/lumen.js",
 			coreJs: "js/core.js",
 			navJs: "js/nav.js",
 			scriptJs: "js/script.js",
@@ -104,20 +105,7 @@ class HtmlBundler {
 			const fileContent = fs.readFileSync(path.join(cssDir, file), "utf-8");
 
 			if (file === "root.css") {
-				const lines = fileContent.split("\n");
-				let inFontFace = false;
-				const cleanLines = lines.filter(line => {
-					if (line.includes("@font-face")) {
-						inFontFace = true;
-						return false;
-					}
-					if (inFontFace) {
-						if (line.includes("}")) inFontFace = false;
-						return false;
-					}
-					return true;
-				});
-				rootCss = cleanLines.join("\n");
+				rootCss = fileContent;
 			} else if (file === "base.css") {
 				baseCss = fileContent;
 			} else {
@@ -150,6 +138,7 @@ class HtmlBundler {
 		const paths = HtmlBundler.CONFIG.paths;
 
 		const loaderJs = this.readRootFile(paths.loaderJs);
+		const lumenJs = this.readRootFile(paths.lumenJs);
 		const coreJs = this.readRootFile(paths.coreJs);
 		const navJs = this.readRootFile(paths.navJs);
 		const scriptJs = this.readRootFile(paths.scriptJs);
@@ -162,6 +151,10 @@ class HtmlBundler {
 			/\r?\n|\r/g,
 			" ",
 		);
+
+		const cleanLumenJs = lumenJs
+			.replace("export default class Lumen", "class Lumen")
+			.trim();
 
 		const cleanScriptJs = scriptJs
 			.split("\n")
@@ -176,6 +169,7 @@ class HtmlBundler {
 			cacheInjection,
 			fontInjection,
 			loaderJs,
+			cleanLumenJs,
 			coreJs,
 			navJs,
 			cleanScriptJs,
@@ -189,8 +183,11 @@ class HtmlBundler {
 
 			const indexHtml = this.readRootFile(config.paths.indexHtml);
 			const processedHtml = this.processHtmlLogo(indexHtml);
-			const combinedCss = this.processCss();
+			let combinedCss = this.processCss();
 			const combinedScript = this.processJs();
+
+			// Тотальная зачистка: вырезаем любые конструкции @font-face из итогового CSS бандла
+			combinedCss = combinedCss.replace(/@font-face\s*\{[^]*?\}/gi, "");
 
 			let finalHtml = this.inlineAssets(
 				processedHtml,

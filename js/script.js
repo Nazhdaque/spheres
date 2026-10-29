@@ -1,6 +1,7 @@
 import "./loader.js";
 import { ScaleManager } from "./core.js";
 import { initAccessibility } from "./nav.js";
+import Lumen from "./lumen.js";
 
 class App {
 	static CONFIG = {
@@ -24,6 +25,7 @@ class App {
 		this.container = null;
 		this.legendItems = null;
 		this.scaleManager = null;
+		this.lumen = null;
 		this.events = {
 			mouseover: pair => this.toggleActive(pair, true),
 			mouseout: pair => this.toggleActive(pair, false),
@@ -59,6 +61,12 @@ class App {
 		if (!this.container || !this.legendItems.length) return;
 
 		this.scaleManager = new ScaleManager(this.container, this.legendItems);
+
+		this.lumen = new Lumen(this.container, {
+			ease: 0.08,
+			limits: { min: 0.05, max: 0.95 },
+		});
+
 		this.bindEvents();
 
 		initAccessibility({
