@@ -6,28 +6,29 @@ export class DataParser {
 
 		return tsvString
 			.split(/\r?\n/)
-			.map(line => line.trim())
-			.filter(Boolean)
+			.filter(line => line.trim() !== "")
 			.reduce(
 				(acc, line) => {
-					const [color = "", rawValue = "", legend = ""] = line
-						.split("\t")
-						.map(s => s.trim());
+					const parts = line.split("\t").map(s => s.trim());
+					const color = parts[0] ?? "";
+					const rawValue = parts[1] ?? "";
+					const legend = parts[2] ?? "";
 
-					if (!color && !rawValue && legend) {
+					if (!rawValue && legend) {
 						acc.title = legend;
 						return acc;
 					}
 
 					if (!rawValue) {
-						if (legend) acc.title = legend;
 						return acc;
 					}
 
 					const parsedValue = parseFloat(rawValue.replace(",", "."));
 
 					if (isNaN(parsedValue)) {
-						if (legend) acc.title = legend;
+						if (legend && legend.toLowerCase() !== "legend") {
+							acc.title = legend;
+						}
 						return acc;
 					}
 
