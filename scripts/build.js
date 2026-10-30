@@ -8,19 +8,20 @@ class HtmlBundler {
 			outputHtml: "dist.html",
 			cssDir: "css",
 			font: "assets/Geologica.ttf",
-			logo: "assets/logo.svg",
-			loaderJs: "js/loader.js",
+			logo: "assets/x-ru-200-w-2.svg",
+			dataPath: "data.tsv",
+			colorJs: "js/color.js",
+			parserJs: "js/parser.js",
+			rendererJs: "js/renderer.js",
 			lumenJs: "js/lumen.js",
 			coreJs: "js/core.js",
 			navJs: "js/nav.js",
 			scriptJs: "js/script.js",
-			spheresHtml: "html/spheres.html",
-			legendHtml: "html/legend.html",
 		},
 		markers: {
 			css: "css/style.css",
 			js: "js/script.js",
-			logo: "assets/logo.svg",
+			logo: "./assets/x-ru-200-w-2.svg",
 		},
 		mime: {
 			svg: "data:image/svg+xml;base64,",
@@ -62,12 +63,23 @@ class HtmlBundler {
 		return html.slice(0, bounds.start) + replacement + html.slice(bounds.end);
 	};
 
-	generateCacheScript = (spheresHtml, legendHtml) => {
-		return [
-			"if (!window.BaseHtmlLoader) window.BaseHtmlLoader = { cache: {} };",
-			`window.BaseHtmlLoader.cache["./html/spheres.html"] = \`${spheresHtml}\`;`,
-			`window.BaseHtmlLoader.cache["./html/legend.html"] = \`${legendHtml}\`;`,
-		].join("\n");
+	cleanModule = (fileText, classNameToGlobal) => {
+		let result = fileText
+			.split("\n")
+			.filter(line => !line.trim().startsWith("import"))
+			.join("\n");
+
+		if (classNameToGlobal) {
+			result = result.replace(
+				`export class ${classNameToGlobal}`,
+				`class ${classNameToGlobal}`,
+			);
+			result = result.replace(
+				`export default class ${classNameToGlobal}`,
+				`class ${classNameToGlobal}`,
+			);
+		}
+		return result.trim();
 	};
 
 	generateFontScript = fontPath => {
@@ -123,13 +135,11 @@ class HtmlBundler {
 	processHtmlLogo = indexHtml => {
 		const config = HtmlBundler.CONFIG;
 		const logoPath = path.join(this.root, config.paths.logo);
+		const targetMarker = config.markers.logo;
 
-		if (fs.existsSync(logoPath) && indexHtml.includes(config.markers.logo)) {
+		if (fs.existsSync(logoPath) && indexHtml.includes(targetMarker)) {
 			const logoBase64 = fs.readFileSync(logoPath).toString("base64");
-			return indexHtml.replace(
-				config.markers.logo,
-				`${config.mime.svg}${logoBase64}`,
-			);
+			return indexHtml.replace(targetMarker, `${config.mime.svg}${logoBase64}`);
 		}
 		return indexHtml;
 	};
@@ -137,42 +147,59 @@ class HtmlBundler {
 	processJs = () => {
 		const paths = HtmlBundler.CONFIG.paths;
 
-		const loaderJs = this.readRootFile(paths.loaderJs);
+		const colorJs = this.readRootFile(paths.colorJs);
+		const parserJs = this.readRootFile(paths.parserJs);
+		const rendererJs = this.readRootFile(paths.rendererJs);
 		const lumenJs = this.readRootFile(paths.lumenJs);
 		const coreJs = this.readRootFile(paths.coreJs);
 		const navJs = this.readRootFile(paths.navJs);
 		const scriptJs = this.readRootFile(paths.scriptJs);
+		const tsvData = this.readRootFile(paths.dataPath);
 
-		const spheresHtml = this.readRootFile(paths.spheresHtml).replace(
-			/\r?\n|\r/g,
-			" ",
+		const cleanColor = this.cleanModule(colorJs, "ColorConverter");
+		const cleanParser = this.cleanModule(parserJs, "DataParser");
+		const cleanRenderer = this.cleanModule(rendererJs, "DomRenderer");
+		const cleanLumen = this.cleanModule(lumenJs, "Lumen");
+		const cleanCore = this.cleanModule(coreJs, "ScaleManager");
+
+		let cleanNav = this.cleanModule(navJs);
+		cleanNav = cleanNav.replace(
+			"export const initAccessibility",
+			"const initAccessibility",
 		);
-		const legendHtml = this.readRootFile(paths.legendHtml).replace(
-			/\r?\n|\r/g,
-			" ",
-		);
 
-		const cleanLumenJs = lumenJs
-			.replace("export default class Lumen", "class Lumen")
-			.trim();
+		let cleanScript = this.cleanModule(scriptJs);
 
-		const cleanScriptJs = scriptJs
-			.split("\n")
-			.filter(line => !line.trim().startsWith("import"))
-			.join("\n");
+		const escapedTsv = tsvData
+			.replace(/\\/g, "\\\\")
+			.replace(/`/g, "\\`")
+			.replace(/\$/g, "\\$");
+		const tsvInjection = `const embeddedTsvData = \`${escapedTsv}\`;`;
 
-		const cacheInjection = this.generateCacheScript(spheresHtml, legendHtml);
+		const fetchRegex =
+			/const\s+response\s*=\s*await\s+fetch\([^)]+\);[\s\S]*?const\s+tsvText\s*=\s*await\s+response\.text\(\);/;
+		if (cleanScript.search(fetchRegex) !== -1) {
+			cleanScript = cleanScript.replace(
+				fetchRegex,
+				"const tsvText = embeddedTsvData;",
+			);
+		} else {
+			throw new Error("Не удалось найти и заменить блок fetch в script.js");
+		}
+
 		const fontInjection = this.generateFontScript(paths.font);
 
 		return [
 			'<script type="module">',
-			cacheInjection,
+			tsvInjection,
 			fontInjection,
-			loaderJs,
-			cleanLumenJs,
-			coreJs,
-			navJs,
-			cleanScriptJs,
+			cleanColor,
+			cleanParser,
+			cleanRenderer,
+			cleanLumen,
+			cleanCore,
+			cleanNav,
+			cleanScript,
 			"</script>",
 		].join("\n");
 	};
@@ -186,7 +213,6 @@ class HtmlBundler {
 			let combinedCss = this.processCss();
 			const combinedScript = this.processJs();
 
-			// Тотальная зачистка: вырезаем любые конструкции @font-face из итогового CSS бандла
 			combinedCss = combinedCss.replace(/@font-face\s*\{[^]*?\}/gi, "");
 
 			let finalHtml = this.inlineAssets(

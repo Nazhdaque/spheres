@@ -1,4 +1,5 @@
-import "./loader.js";
+import { DataParser } from "./parser.js";
+import { DomRenderer } from "./renderer.js";
 import { ScaleManager } from "./core.js";
 import { initAccessibility } from "./nav.js";
 import Lumen from "./lumen.js";
@@ -6,73 +7,80 @@ import Lumen from "./lumen.js";
 class App {
 	static CONFIG = {
 		selectors: {
+			root: "#app",
 			spheres: ".spheres",
-			legendItems: ".legend li",
 			legendContainer: ".legend",
-		},
-		events: {
-			readySpheres: "spheres-ready",
-			readyLegend: "legend-ready",
+			legendItems: ".legend li",
 		},
 		classes: {
 			pinned: "is-pinned",
 			activeSphere: "legend-active",
 			activeLegend: "sphere-active",
 		},
+		viewSettings: {
+			legend: {
+				"--width": "30",
+				// "--zoom": "0.66",
+				// "--place": "start",
+			},
+			legendList: {
+				"--col": "3",
+				// "--mode": "flex",
+			},
+			spheres: {
+				"--log-scale": "0",
+				"--is-reverse": "1",
+				"--layer-order": "1",
+				"--overlap-ratio": "0.2",
+			},
+		},
+		dataPath: "./data.tsv",
 	};
 
 	constructor() {
+		this.rootEl = null;
 		this.container = null;
 		this.legendItems = null;
 		this.scaleManager = null;
 		this.lumen = null;
-		this.events = {
-			mouseover: pair => this.toggleActive(pair, true),
-			mouseout: pair => this.toggleActive(pair, false),
-			click: pair => this.togglePinned(pair),
-		};
 	}
 
 	async init() {
-		const selectors = App.CONFIG.selectors;
-		const readyEvents = App.CONFIG.events;
+		try {
+			const config = App.CONFIG;
+			this.rootEl = document.querySelector(config.selectors.root);
+			if (!this.rootEl) return;
 
-		const isSpheresExist = !!document.querySelector(selectors.spheres);
-		const isLegendExist = !!document.querySelector(selectors.legendItems);
+			const response = await fetch(config.dataPath);
+			if (!response.ok) throw new Error(`Status: ${response.status}`);
+			const tsvText = await response.text();
 
-		if (!isSpheresExist || !isLegendExist) {
-			await Promise.all([
-				new Promise(resolve =>
-					document.addEventListener(readyEvents.readySpheres, resolve, {
-						once: true,
-					}),
-				),
-				new Promise(resolve =>
-					document.addEventListener(readyEvents.readyLegend, resolve, {
-						once: true,
-					}),
-				),
-			]);
+			const parsedData = DataParser.parseTSV(tsvText);
+			const renderResult = DomRenderer.render(
+				parsedData,
+				this.rootEl,
+				config.viewSettings,
+			);
+
+			this.container = renderResult.spheresContainer;
+			this.legendItems = renderResult.legendItems;
+
+			this.scaleManager = new ScaleManager(this.container, this.legendItems);
+
+			this.lumen = new Lumen(this.container, {
+				ease: 0.08,
+				limits: { min: 0.05, max: 0.95 },
+			});
+
+			this.bindEvents();
+
+			initAccessibility({
+				spheres: config.selectors.spheres,
+				legend: config.selectors.legendContainer,
+			});
+		} catch (error) {
+			console.error("Initialization error:", error);
 		}
-
-		this.container = document.querySelector(selectors.spheres);
-		this.legendItems = document.querySelectorAll(selectors.legendItems);
-
-		if (!this.container || !this.legendItems.length) return;
-
-		this.scaleManager = new ScaleManager(this.container, this.legendItems);
-
-		this.lumen = new Lumen(this.container, {
-			ease: 0.08,
-			limits: { min: 0.05, max: 0.95 },
-		});
-
-		this.bindEvents();
-
-		initAccessibility({
-			spheres: selectors.spheres,
-			legend: selectors.legendContainer,
-		});
 	}
 
 	toggleActive(pair, isOver) {
@@ -88,10 +96,18 @@ class App {
 	}
 
 	bindEvents() {
-		Object.entries(this.events).forEach(([eventType, handler]) => {
-			document.addEventListener(eventType, e => {
+		const eventTypes = ["mouseover", "mouseout", "click"];
+
+		eventTypes.forEach(eventType => {
+			this.rootEl.addEventListener(eventType, e => {
 				const pair = this.scaleManager.getPair(e.target);
-				if (pair) handler(pair);
+				if (!pair) return;
+
+				if (eventType === "click") {
+					this.togglePinned(pair);
+				} else {
+					this.toggleActive(pair, eventType === "mouseover");
+				}
 			});
 		});
 	}

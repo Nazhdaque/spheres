@@ -4,6 +4,7 @@ export default class Lumen {
 		this.ease = options.ease ?? 0.08;
 		this.target = { x: 0.28, y: 0.72, z: 0.65 };
 		this.current = { x: 0.28, y: 0.72, z: 0.65 };
+		this.lastApplied = { x: 0, y: 0, z: 0 };
 		this.isActive = false;
 
 		this.init();
@@ -13,13 +14,14 @@ export default class Lumen {
 		if (this.isActive || !this.container) return;
 
 		this.isActive = true;
-		window.addEventListener("mousemove", this.onMouseMove);
+		window.addEventListener("mousemove", this.onMouseMove, { passive: true });
 		this.tick();
 	}
 
 	onMouseMove = event => {
-		const x = event.clientX / window.innerWidth;
-		const y = 1 - event.clientY / window.innerHeight;
+		const { innerWidth: w, innerHeight: h } = window;
+		const x = event.clientX / w;
+		const y = 1 - event.clientY / h;
 
 		const distX = Math.abs(x - 0.5) * 2;
 		const distY = Math.abs(y - 0.5) * 2;
@@ -38,18 +40,24 @@ export default class Lumen {
 		this.current.y += (this.target.y - this.current.y) * this.ease;
 		this.current.z += (this.target.z - this.current.z) * this.ease;
 
-		this.container.style.setProperty(
-			"--light-pos-x",
-			this.current.x.toFixed(3),
-		);
-		this.container.style.setProperty(
-			"--light-pos-y",
-			this.current.y.toFixed(3),
-		);
-		this.container.style.setProperty(
-			"--light-pos-z",
-			this.current.z.toFixed(3),
-		);
+		const cx = Math.round(this.current.x * 1000) / 1000;
+		const cy = Math.round(this.current.y * 1000) / 1000;
+		const cz = Math.round(this.current.z * 1000) / 1000;
+
+		if (
+			cx !== this.lastApplied.x ||
+			cy !== this.lastApplied.y ||
+			cz !== this.lastApplied.z
+		) {
+			const style = this.container.style;
+			style.setProperty("--light-pos-x", cx);
+			style.setProperty("--light-pos-y", cy);
+			style.setProperty("--light-pos-z", cz);
+
+			this.lastApplied.x = cx;
+			this.lastApplied.y = cy;
+			this.lastApplied.z = cz;
+		}
 
 		requestAnimationFrame(this.tick);
 	};

@@ -7,11 +7,11 @@ export class ScaleManager {
 			value: "--value",
 			min: "--min",
 			max: "--max",
-			color: "--c-main",
 		},
 	};
 
 	constructor(container, legendItems) {
+		if (!container) return;
 		this.container = container;
 		this.legendItems = Array.from(legendItems);
 		this.elementMap = new Map();
@@ -23,6 +23,8 @@ export class ScaleManager {
 	calculateScale() {
 		const props = ScaleManager.CONFIG.properties;
 		const spheres = Array.from(this.container.children);
+		if (!spheres.length) return [];
+
 		const vals = spheres.map(li => {
 			const val = parseFloat(li.style.getPropertyValue(props.value));
 			return !val || val <= 0 ? 0.0001 : val;
@@ -33,33 +35,21 @@ export class ScaleManager {
 		return spheres;
 	}
 
-	normalizeColor(el) {
-		return el.style
-			.getPropertyValue(ScaleManager.CONFIG.properties.color)
-			?.trim();
-	}
-
 	buildElementMap() {
-		this.spheres.forEach(sphere => {
-			const color = this.normalizeColor(sphere);
-			if (color) {
-				sphere.dataset.color = color;
-				this.elementMap.set(color, { sphere, legend: null });
-			}
-		});
+		this.spheres.forEach((sphere, index) => {
+			const legend = this.legendItems[index] || null;
+			const pair = { sphere, legend };
 
-		this.legendItems.forEach(legend => {
-			const color = this.normalizeColor(legend);
-			if (color) {
-				legend.dataset.color = color;
-				const pair = this.elementMap.get(color);
-				if (pair) pair.legend = legend;
+			this.elementMap.set(sphere, pair);
+			if (legend) {
+				this.elementMap.set(legend, pair);
 			}
 		});
 	}
 
-	getPair(target) {
+	getPair = target => {
+		if (!target) return null;
 		const item = target.closest(ScaleManager.CONFIG.selectors.targetItem);
-		return item ? this.elementMap.get(item.dataset.color) : null;
-	}
+		return item ? this.elementMap.get(item) : null;
+	};
 }

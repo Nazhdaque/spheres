@@ -1,13 +1,22 @@
 class ArrowNavigation {
-	constructor(containerSelector, isInteractiveItems = false) {
+	constructor(
+		containerSelector,
+		isInteractiveItems = false,
+		itemsSelector = null,
+	) {
 		this.container = document.querySelector(containerSelector);
 		if (!this.container) return;
 
-		this.items = Array.from(this.container.children);
+		this.items = itemsSelector
+			? Array.from(this.container.querySelectorAll(itemsSelector))
+			: Array.from(this.container.children);
+
 		if (!this.items.length) return;
 
 		this.isInteractiveItems = isInteractiveItems;
 		this.currentIdx = -1;
+		this.isReverse = false;
+
 		this.initAttributes();
 		this.initEvents();
 	}
@@ -19,7 +28,15 @@ class ArrowNavigation {
 
 	initEvents() {
 		this.container.addEventListener("keydown", e => this.handleKeyDown(e));
+		this.container.addEventListener("focusin", () => this.updateDirection());
 		this.container.addEventListener("focusout", e => this.handleFocusOut(e));
+	}
+
+	updateDirection() {
+		this.isReverse =
+			parseFloat(
+				getComputedStyle(this.container).getPropertyValue("--is-reverse"),
+			) === 1;
 	}
 
 	handleKeyDown(e) {
@@ -33,6 +50,12 @@ class ArrowNavigation {
 		if (isAction) {
 			this.triggerAction();
 			return;
+		}
+
+		if (this.isReverse) {
+			const temp = isStepDown;
+			isStepDown = isStepUp;
+			isStepUp = temp;
 		}
 
 		this.deactivateCurrent();
@@ -56,24 +79,14 @@ class ArrowNavigation {
 	}
 
 	calculateNextIndex(isStepDown, isStepUp) {
-		const isReverse =
-			parseFloat(
-				getComputedStyle(this.container).getPropertyValue("--is-reverse"),
-			) === 1;
-		if (isReverse) {
-			const temp = isStepDown;
-			isStepDown = isStepUp;
-			isStepUp = temp;
-		}
-
+		const len = this.items.length;
 		if (this.currentIdx === -1) {
-			this.currentIdx = isStepDown ? 0 : this.items.length - 1;
+			this.currentIdx = isStepDown ? 0 : len - 1;
 		} else {
 			if (isStepDown) {
-				this.currentIdx = (this.currentIdx + 1) % this.items.length;
+				this.currentIdx = (this.currentIdx + 1) % len;
 			} else if (isStepUp) {
-				this.currentIdx =
-					this.currentIdx <= 0 ? this.items.length - 1 : this.currentIdx - 1;
+				this.currentIdx = (this.currentIdx - 1 + len) % len;
 			}
 		}
 	}
@@ -128,7 +141,7 @@ class SpheresNavigation extends ArrowNavigation {
 
 class LegendNavigation extends ArrowNavigation {
 	constructor(selector) {
-		super(selector, false);
+		super(selector, false, "ul > li");
 	}
 }
 

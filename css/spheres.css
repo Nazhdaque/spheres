@@ -43,9 +43,7 @@
 		(1.3 - var(--light-y-val)) * (1.5 - var(--light-z-val))
 	);
 
-	--text-shadow-x: calc(
-		(0.5 - var(--light-x-val)) * var(--size) * 0.05rem * var(--dir-multiplier)
-	);
+	--text-shadow-x: calc((0.5 - var(--light-x-val)) * var(--size) * 0.05rem);
 	--text-shadow-y: calc((var(--light-y-val) - 0.5) * var(--size) * 0.05rem);
 	--text-shadow-blur: calc(var(--size) * 0.015rem * (1.4 - var(--light-z-val)));
 

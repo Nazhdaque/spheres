@@ -38,8 +38,7 @@ ul {
 	list-style: none;
 }
 
-bi-spheres,
-bi-legend {
+#app {
 	display: contents;
 }
 

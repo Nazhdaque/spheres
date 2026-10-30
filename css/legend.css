@@ -5,20 +5,42 @@
 
 	zoom: var(--zoom, 1);
 	position: absolute;
-	padding: 1em 1.33em;
+	padding: 1.33em;
 	margin: 2em;
 	place-self: var(--place, start end);
 	line-height: var(--lh);
-	pointer-events: none;
 	max-width: calc(var(--width, 100) * 1vw);
-	display: var(--mode, block);
-	flex-wrap: wrap;
-	columns: var(--col, 1);
-	column-gap: 2em;
 	border-radius: var(--rad);
 	backdrop-filter: blur(5px) brightness(2);
 	background-color: color-mix(in oklch, var(--indigo-500) 15%, transparent);
 	z-index: 999;
+	font-size: 0.85em;
+}
+
+.legend h1 {
+	font-size: 1em;
+	font-weight: 400;
+	text-wrap: balance;
+	margin-bottom: 2em;
+	position: relative;
+}
+
+.legend h1:after {
+	position: absolute;
+	content: "";
+	width: 100%;
+	left: 0;
+	right: 0;
+	bottom: -1em;
+	border-bottom: 0.11em dotted white;
+}
+
+.legend ul {
+	pointer-events: none;
+	display: var(--mode, block);
+	flex-wrap: wrap;
+	columns: var(--col, 1);
+	column-gap: 2em;
 }
 
 .legend li {
@@ -30,6 +52,8 @@
 	break-inside: avoid;
 	margin-bottom: 0.5em;
 	pointer-events: none;
+	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 .legend li.is-pinned {
