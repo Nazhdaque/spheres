@@ -22,7 +22,7 @@ body {
 	display: grid;
 	place-items: center;
 	font-family: Geologica;
-	color: white;
+	color: oklch(from white l c h / 0.85);
 	font-weight: 100;
 	background:
 		radial-gradient(

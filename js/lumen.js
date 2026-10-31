@@ -6,6 +6,8 @@ export default class Lumen {
 		this.current = { x: 0.28, y: 0.72, z: 0.65 };
 		this.lastApplied = { x: 0, y: 0, z: 0 };
 		this.isActive = false;
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
 
 		this.init();
 	}
@@ -15,17 +17,22 @@ export default class Lumen {
 
 		this.isActive = true;
 		window.addEventListener("mousemove", this.onMouseMove, { passive: true });
+		window.addEventListener("resize", this.onResize, { passive: true });
 		this.tick();
 	}
 
-	onMouseMove = event => {
-		const { innerWidth: w, innerHeight: h } = window;
-		const x = event.clientX / w;
-		const y = 1 - event.clientY / h;
+	onResize = () => {
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
+	};
 
-		const distX = Math.abs(x - 0.5) * 2;
-		const distY = Math.abs(y - 0.5) * 2;
-		const maxDist = Math.sqrt(distX * distX + distY * distY);
+	onMouseMove = event => {
+		const x = event.clientX / this.width;
+		const y = 1 - event.clientY / this.height;
+
+		const distX = (x - 0.5) * 2;
+		const distY = (y - 0.5) * 2;
+		const maxDist = Math.hypot(distX, distY);
 		const z = Math.max(0.0, Math.min(1.0, 1.0 - maxDist * 0.75));
 
 		this.target.x = Math.max(0.0, Math.min(1.0, x));
@@ -65,6 +72,7 @@ export default class Lumen {
 	destroy() {
 		this.isActive = false;
 		window.removeEventListener("mousemove", this.onMouseMove);
+		window.removeEventListener("resize", this.onResize);
 		this.container = null;
 	}
 }
