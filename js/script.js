@@ -32,7 +32,7 @@ class App {
 				"--overlap-ratio": "0.2",
 			},
 		},
-		dataPath: "/data.tsv",
+		dataPath: "data.tsv",
 	};
 
 	constructor() {
