@@ -1,8 +1,9 @@
-import { DataParser } from "./parser.js";
-import { DomRenderer } from "./renderer.js";
-import { ScaleManager } from "./core.js";
-import { initAccessibility } from "./nav.js";
-import Lumen from "./lumen.js";
+import "../css/style.css";
+import DataParser from "./DataParser.js";
+import DomRenderer from "./DomRenderer.js";
+import ScaleManager from "./ScaleManager.js";
+import Lumen from "./Lumen.js";
+import { initAccessibility } from "./KeyboardNavigation.js";
 
 class App {
 	static CONFIG = {
@@ -20,12 +21,9 @@ class App {
 		viewSettings: {
 			legend: {
 				"--width": "30",
-				// "--zoom": "0.66",
-				// "--place": "start",
 			},
 			legendList: {
 				"--col": "3",
-				// "--mode": "flex",
 			},
 			spheres: {
 				"--log-scale": "0",
@@ -34,7 +32,7 @@ class App {
 				"--overlap-ratio": "0.2",
 			},
 		},
-		dataPath: "./data.tsv",
+		dataPath: "/data.tsv",
 	};
 
 	constructor() {

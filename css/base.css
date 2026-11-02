@@ -2,7 +2,7 @@
 	font-family: "Geologica";
 	font-display: swap;
 	font-weight: 100 900;
-	src: url(../assets/Geologica.ttf) format(truetype);
+	src: url(/Geologica.ttf) format(truetype);
 }
 
 * {
