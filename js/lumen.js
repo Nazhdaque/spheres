@@ -6,6 +6,7 @@ export default class Lumen {
 		this.current = { x: 0.28, y: 0.72, z: 0.65 };
 		this.lastApplied = { x: 0, y: 0, z: 0 };
 		this.isActive = false;
+		this.rafId = null;
 		this.width = window.innerWidth;
 		this.height = window.innerHeight;
 
@@ -16,9 +17,14 @@ export default class Lumen {
 		if (this.isActive || !this.container) return;
 
 		this.isActive = true;
-		window.addEventListener("mousemove", this.onMouseMove, { passive: true });
+		window.addEventListener("pointermove", this.onPointerMove, {
+			passive: true,
+		});
+		window.addEventListener("pointerdown", this.onPointerMove, {
+			passive: true,
+		});
 		window.addEventListener("resize", this.onResize, { passive: true });
-		this.tick();
+		this.rafId = requestAnimationFrame(this.tick);
 	}
 
 	onResize = () => {
@@ -26,7 +32,9 @@ export default class Lumen {
 		this.height = window.innerHeight;
 	};
 
-	onMouseMove = event => {
+	onPointerMove = event => {
+		if (event.isPrimary === false) return;
+
 		const x = event.clientX / this.width;
 		const y = 1 - event.clientY / this.height;
 
@@ -41,7 +49,7 @@ export default class Lumen {
 	};
 
 	tick = () => {
-		if (!this.isActive) return;
+		if (!this.isActive || !this.container) return;
 
 		this.current.x += (this.target.x - this.current.x) * this.ease;
 		this.current.y += (this.target.y - this.current.y) * this.ease;
@@ -52,26 +60,28 @@ export default class Lumen {
 		const cz = Math.round(this.current.z * 1000) / 1000;
 
 		if (
-			cx !== this.lastApplied.x ||
-			cy !== this.lastApplied.y ||
-			cz !== this.lastApplied.z
+			Math.abs(cx - this.lastApplied.x) > 0.001 ||
+			Math.abs(cy - this.lastApplied.y) > 0.001 ||
+			Math.abs(cz - this.lastApplied.z) > 0.001
 		) {
 			const style = this.container.style;
-			style.setProperty("--light-pos-x", cx);
-			style.setProperty("--light-pos-y", cy);
-			style.setProperty("--light-pos-z", cz);
+			style.setProperty("--light-pos-x", cx.toString());
+			style.setProperty("--light-pos-y", cy.toString());
+			style.setProperty("--light-pos-z", cz.toString());
 
 			this.lastApplied.x = cx;
 			this.lastApplied.y = cy;
 			this.lastApplied.z = cz;
 		}
 
-		requestAnimationFrame(this.tick);
+		this.rafId = requestAnimationFrame(this.tick);
 	};
 
 	destroy() {
 		this.isActive = false;
-		window.removeEventListener("mousemove", this.onMouseMove);
+		if (this.rafId) cancelAnimationFrame(this.rafId);
+		window.removeEventListener("pointermove", this.onPointerMove);
+		window.removeEventListener("pointerdown", this.onPointerMove);
 		window.removeEventListener("resize", this.onResize);
 		this.container = null;
 	}

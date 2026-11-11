@@ -36,6 +36,8 @@ export default class DomRenderer {
 		spheresList.className = "spheres";
 		this.#applyStyles(spheresList, settings.spheres);
 
+		const isReverse = settings.spheres?.["--is-reverse"] === "1";
+
 		data.items.forEach(item => {
 			const { l, c, h } = ColorConverter.hexToOklch(item.color);
 			const colorString = `oklch(${l} ${c} ${h})`;
@@ -43,7 +45,12 @@ export default class DomRenderer {
 			const legendLi = document.createElement("li");
 			legendLi.style.setProperty("--c-main", colorString);
 			legendLi.textContent = item.legend;
-			legendList.appendChild(legendLi);
+
+			if (isReverse) {
+				legendList.insertBefore(legendLi, legendList.firstChild);
+			} else {
+				legendList.appendChild(legendLi);
+			}
 
 			const sphereLi = document.createElement("li");
 			sphereLi.style.setProperty("--value", item.value);

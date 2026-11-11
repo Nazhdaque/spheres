@@ -1,14 +1,19 @@
+/* ==========================================================================
+   1. КАСТОМНЫЕ СВОЙСТВА И ПЕРЕМЕННЫЕ (@property)
+   ========================================================================== */
 @property --core-darkness {
 	syntax: "<number>";
 	inherits: true;
 	initial-value: 0.75;
 }
 
+/* ==========================================================================
+   2. ГЛАВНЫЙ КОНТЕЙНЕР СФЕР
+   ========================================================================== */
 .spheres {
 	--min-screen-size: 2.33;
 	--max-screen-size: 12.52;
 	--size-range: calc(var(--max-screen-size) - var(--min-screen-size));
-	--rad: 2em;
 
 	display: flex;
 	align-items: flex-end;
@@ -21,6 +26,9 @@
 	margin-inline-start: 0;
 }
 
+/* ==========================================================================
+   3. ВЫЧИСЛЕНИЕ ПРОПОРЦИЙ И ШКАЛЫ (ЛИНЕЙНАЯ / ЛОГАРИФМИЧЕСКАЯ)
+   ========================================================================== */
 .spheres > * {
 	--dir-multiplier: calc(1 - var(--is-reverse, 0) * 2);
 	--linear-proportion: calc(
@@ -36,6 +44,9 @@
 	--current-proportion: var(--log-proportion);
 }
 
+/* ==========================================================================
+   4. ГЕОМЕТРИЯ, ОСВЕЩЕНИЕ И ЦВЕТОВАЯ МОДЕЛЬ СФЕРЫ
+   ========================================================================== */
 .spheres > * {
 	--light-x-val: var(--light-pos-x, 0.28);
 	--light-y-val: var(--light-pos-y, 0.72);
@@ -46,7 +57,7 @@
 
 	--shadow-shift-x: calc(var(--light-x-val) - 0.5);
 	--shadow-shift-y: calc(
-		(1.3 - var(--light-y-val)) * (1.5 - var(--light-z-val))
+		(var(--light-y-val) - 1.1) * (1.5 - var(--light-z-val))
 	);
 
 	--text-shadow-x: calc((0.5 - var(--light-x-val)) * var(--size) * 0.05rem);
@@ -56,8 +67,8 @@
 	--size: calc(
 		var(--min-screen-size) + (var(--current-proportion) * var(--size-range))
 	);
-	--calculated-opacity: calc(0.1 + (var(--size) * 0.02));
-	--shadow-opacity-final: var(--shadow-opacity, var(--calculated-opacity));
+
+	--shadow-fade-out: clamp(0, calc((var(--light-y-val) - 0.25) * 2.5), 1);
 
 	--c-light-calculated: color-mix(
 		in oklch,
@@ -127,31 +138,39 @@
 			var(--c-reflex-calculated) 100%
 		);
 	box-shadow:
-		calc(var(--size) * (var(--shadow-shift-x) * 0.2rem) * var(--dir-multiplier))
+		calc(var(--size) * (var(--shadow-shift-x) * 0.4rem) * var(--dir-multiplier))
 			calc(var(--size) * (var(--shadow-shift-y) * 0.04rem))
 			calc(var(--size) * 0.15rem * var(--shadow-blur-mult))
-			oklch(from var(--c-floor-shadow-core) l c h / 0.2),
+			oklch(
+				from var(--c-floor-shadow-core) l c h /
+					calc(0.2 * var(--shadow-fade-out))
+			),
 		calc(
 				var(--size) * (var(--shadow-shift-x) * 0.35rem) * var(--dir-multiplier)
 			)
 			calc(var(--size) * (var(--shadow-shift-y) * 0.08rem))
 			calc(var(--size) * 0.35rem * var(--shadow-blur-mult))
-			oklch(from var(--c-floor-shadow-core) l c h / 0.1);
+			oklch(
+				from var(--c-floor-shadow-core) l c h /
+					calc(0.1 * var(--shadow-fade-out))
+			);
 	transform-origin: bottom center;
 	cursor: pointer;
 	transform: translate3d(0, 0, 0) scale(calc(1 - var(--is-reverse, 0) * 2), 1);
+	transform-style: preserve-3d;
 	will-change: transform;
 
 	transition:
 		transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
 		text-shadow 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
 
-.spheres > * {
 	text-shadow: var(--text-shadow-x) var(--text-shadow-y) var(--text-shadow-blur)
 		oklch(0 0 0 / 0.6);
 }
 
+/* ==========================================================================
+   5. ПСЕВДОЭЛЕМЕНТЫ: ОБЛАСТЬ КЛИКА (::before) И ПАДАЮЩАЯ ТЕНЬ (::after)
+   ========================================================================== */
 .spheres > *::before {
 	content: "";
 	position: absolute;
@@ -167,66 +186,80 @@
 .spheres > *::after {
 	content: "";
 	position: absolute;
-	bottom: calc(var(--size) * -0.05rem);
-	left: 7%;
-	width: 86%;
-	height: calc(var(--size) * 0.12rem);
+	bottom: 0;
+	left: 10%;
+	width: 80%;
+	height: calc(
+		var(--size) * 0.15rem * calc(0.5 + (1 - var(--light-z-val)) * 0.8)
+	);
 	pointer-events: none;
-	transform-origin: bottom center;
+	transform-origin: top center;
 	will-change: transform, opacity;
+	opacity: var(--shadow-fade-out);
 
 	--blur-amt: calc(
-		var(--size) * calc(0.025rem + abs(var(--shadow-shift-x)) * 0.05rem) *
+		var(--size) * calc(0.015rem + abs(var(--shadow-shift-x)) * 0.04rem) *
 			var(--shadow-blur-mult)
 	);
 	filter: blur(var(--blur-amt));
 
-	transform: translate3d(
-			calc(
-				var(--size) * (var(--shadow-shift-x) * 0.3rem) * var(--dir-multiplier)
-			),
-			calc(
-				var(--size) *
-					(
-						var(--shadow-shift-y) *
-							calc(0.015rem + (1 - var(--light-z-val)) * 0.03rem)
-					)
-			),
-			0
-		)
-		scale(
-			calc(0.85 + (1 - var(--light-z-val)) * 0.65),
-			calc(0.85 + (1 - var(--light-z-val)) * 0.25)
-		);
-	background: radial-gradient(
-		oklch(
-				from var(--c-floor-shadow-core) l c h /
-					calc(var(--core-darkness) * calc(0.35 + var(--light-z-val) * 0.65))
-			)
-			0%,
-		oklch(
-				from var(--c-floor-shadow-core) l c h /
-					calc(
-						var(--core-darkness) * calc(0.35 + var(--light-z-val) * 0.65) * 0.75
-					)
-			)
-			25%,
-		oklch(
-				from var(--c-floor-shadow-core) l c h /
-					calc(
-						var(--core-darkness) * calc(0.35 + var(--light-z-val) * 0.65) * 0.35
-					)
-			)
-			50%,
-		oklch(from var(--c-floor-shadow-core) l c h / 0) 75%
+	--skew-angle: calc(
+		var(--shadow-shift-x) * 35deg * var(--dir-multiplier) *
+			var(--shadow-fade-out)
 	);
+
+	transform: translate3d(
+			0,
+			calc(var(--size) * (var(--shadow-shift-y) * 0.05rem)),
+			-1px
+		)
+		skewX(var(--skew-angle))
+		scale(
+			calc(0.9 + (1 - var(--light-z-val)) * 0.3),
+			calc(
+				(0.4 + var(--light-y-val) * 0.8) * (1 + (1 - var(--light-z-val)) * 1.2)
+			)
+		);
+	background:
+		radial-gradient(
+			ellipse at center,
+			oklch(
+					from var(--c-floor-shadow-core) l c h /
+						calc(var(--core-darkness) * 0.85)
+				)
+				0%,
+			oklch(
+					from var(--c-floor-shadow-core) l c h /
+						calc(var(--core-darkness) * 0.4)
+				)
+				20%,
+			oklch(from var(--c-floor-shadow-core) l c h / 0) 60%
+		),
+		radial-gradient(
+			ellipse at center,
+			oklch(
+					from var(--c-floor-shadow-core) l c h /
+						calc(var(--core-darkness) * 0.3)
+				)
+				0%,
+			oklch(
+					from var(--c-floor-shadow-core) l c h /
+						calc(var(--core-darkness) * 0.1)
+				)
+				50%,
+			oklch(from var(--c-floor-shadow-core) l c h / 0) 100%
+		);
 	border-radius: 50%;
 	z-index: -1;
 	transition:
 		transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+		height 0.4s cubic-bezier(0.25, 1, 0.5, 1),
 		opacity 0.4s ease;
 }
 
+/* ==========================================================================
+   6. ИНТЕРАКТИВНЫЕ СОСТОЯНИЯ (HOVER, ACTIVE, PINNED, FOCUS)
+   ========================================================================== */
 .spheres > *:hover,
 .spheres > *.legend-active,
 .spheres > *.is-pinned {
@@ -252,31 +285,26 @@
 .spheres > *:hover::after,
 .spheres > *.legend-active::after,
 .spheres > *.is-pinned::after {
-	opacity: 0.6;
+	opacity: calc(0.6 * var(--shadow-fade-out));
 	transform: translate3d(
+			0,
 			calc(
-				var(--size) * (var(--shadow-shift-x) * 0.3rem) * var(--dir-multiplier)
+				(var(--size) * (var(--shadow-shift-y) * 0.05rem) - var(--jump-height)) /
+					var(--scale-factor)
 			),
-			calc(
-				(2.5rem / var(--scale-factor)) +
-					(
-						var(--size) *
-							(
-								var(--shadow-shift-y) *
-									calc(0.015rem + (1 - var(--light-z-val)) * 0.03rem)
-							)
-					)
-			),
-			0
+			-1px
 		)
+		skewX(var(--skew-angle))
 		scale(
 			calc(
-				calc(1.4 / var(--scale-factor)) *
-					calc(0.85 + (1 - var(--light-z-val)) * 0.65)
+				calc(1 / var(--scale-factor)) *
+					calc(
+						0.9 + abs(var(--shadow-shift-x)) * 0.8 + (1 - var(--light-z-val)) *
+							0.3
+					)
 			),
 			calc(
-				calc(1.4 / var(--scale-factor)) *
-					calc(0.85 + (1 - var(--light-z-val)) * 0.25)
+				calc(1 / var(--scale-factor)) * calc(1 + (1 - var(--light-z-val)) * 1.5)
 			)
 		);
 }

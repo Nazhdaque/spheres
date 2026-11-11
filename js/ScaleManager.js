@@ -27,17 +27,23 @@ export default class ScaleManager {
 
 		const vals = spheres.map(li => {
 			const val = parseFloat(li.style.getPropertyValue(props.value));
-			return !val || val <= 0 ? 0.0001 : val;
+			return isNaN(val) || val <= 0 ? 0.0001 : val;
 		});
 
-		this.container.style.setProperty(props.min, Math.min(...vals));
-		this.container.style.setProperty(props.max, Math.max(...vals));
+		this.container.style.setProperty(props.min, Math.min(...vals).toString());
+		this.container.style.setProperty(props.max, Math.max(...vals).toString());
 		return spheres;
 	}
 
 	buildElementMap() {
+		const computedStyle = window.getComputedStyle(this.container);
+		const isReverse =
+			parseFloat(computedStyle.getPropertyValue("--is-reverse")) === 1;
+		const len = this.spheres.length;
+
 		this.spheres.forEach((sphere, index) => {
-			const legend = this.legendItems[index] || null;
+			const legendIndex = isReverse ? len - 1 - index : index;
+			const legend = this.legendItems[legendIndex] || null;
 			const pair = { sphere, legend };
 
 			this.elementMap.set(sphere, pair);

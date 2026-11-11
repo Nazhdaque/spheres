@@ -19,12 +19,8 @@ class App {
 			activeLegend: "sphere-active",
 		},
 		viewSettings: {
-			legend: {
-				"--width": "30",
-			},
-			legendList: {
-				"--col": "3",
-			},
+			legend: { "--width": "30" },
+			legendList: { "--col": "3" },
 			spheres: {
 				"--log-scale": "0",
 				"--is-reverse": "1",
@@ -32,7 +28,7 @@ class App {
 				"--overlap-ratio": "0.2",
 			},
 		},
-		dataPath: "data.tsv",
+		dataPath: "data-hare.tsv",
 	};
 
 	constructor() {
@@ -41,6 +37,7 @@ class App {
 		this.legendItems = null;
 		this.scaleManager = null;
 		this.lumen = null;
+		this.boundHandlers = new Map();
 	}
 
 	async init() {
@@ -50,7 +47,8 @@ class App {
 			if (!this.rootEl) return;
 
 			const response = await fetch(config.dataPath);
-			if (!response.ok) throw new Error(`Status: ${response.status}`);
+			if (!response.ok)
+				throw new Error(`HTTP Error Status: ${response.status}`);
 			const tsvText = await response.text();
 
 			const parsedData = DataParser.parseTSV(tsvText);
@@ -97,7 +95,7 @@ class App {
 		const eventTypes = ["mouseover", "mouseout", "click"];
 
 		eventTypes.forEach(eventType => {
-			this.rootEl.addEventListener(eventType, e => {
+			const handler = e => {
 				const pair = this.scaleManager.getPair(e.target);
 				if (!pair) return;
 
@@ -106,13 +104,27 @@ class App {
 				} else {
 					this.toggleActive(pair, eventType === "mouseover");
 				}
-			});
+			};
+
+			this.boundHandlers.set(eventType, handler);
+			this.rootEl.addEventListener(eventType, handler);
 		});
+	}
+
+	destroy() {
+		if (this.rootEl && this.boundHandlers.size > 0) {
+			this.boundHandlers.forEach((handler, eventType) => {
+				this.rootEl.removeEventListener(eventType, handler);
+			});
+		}
+		if (this.lumen) {
+			this.lumen.destroy();
+		}
+		this.boundHandlers.clear();
 	}
 }
 
 const app = new App();
-
 if (document.readyState === "loading") {
 	document.addEventListener("DOMContentLoaded", () => app.init());
 } else {
