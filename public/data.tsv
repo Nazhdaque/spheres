@@ -1,14 +1,14 @@
 color	value	legend
-#5C45B9	1	indigo-500
-#1356C1	1,33	blue-500
-#0074AE	1,78	cerulean-500
-#009096	2,37	teal-500
-#00AC87	3,16	mint-500
-#61BF58	4,21	green-500
-#B3C530	5,62	lime-500
-#EFB513	7,49	yellow-500
-#FA8E45	9,99	orange-500
-#E75A5A	13,32	red-500
-#C43D8A	17,76	magenta-500
-#9B32AA	23,68	purple-500
-		Title
+#5C45B9	1	indigo
+#1356C1	1,33	Blue
+#0074AE	1,78	Cerulean
+#009096	2,37	Teal
+#00AC87	3,16	Mint
+#61BF58	4,21	Green
+#B3C530	5,62	Lime
+#EFB513	7,49	Yellow
+#FA8E45	9,99	Orange
+#E75A5A	13,32	Red
+#C43D8A	17,76	Magenta
+#9B32AA	23,68	Purple
+		Colors
