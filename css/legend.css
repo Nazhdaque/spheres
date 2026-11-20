@@ -9,7 +9,7 @@
 	position: absolute;
 	place-self: var(--place, start end);
 	z-index: 999;
-	margin: 2em;
+	margin: 2rem;
 	padding: 1.33em;
 	max-width: calc(var(--width, 100) * 1vw);
 	aspect-ratio: auto;
